@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+
+    <title>Web-GIS with Geoserver and Leaflet</title>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        #map {
+            width: 100%;
+            height: 100vh;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Kabupaten Sleman dan Kabupaten Wonogiri</h1>
+
+    <div id="map"></div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
+    <!-- jQuery -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+    <!-- Leaflet Geoserver Request -->
+    <script src="lib/L.Geoserver.js"></script>
+
+    <script>
+        // Inisialisasi map
+        var map = L.map("map").setView([-7.686996108678494, 110.38093172723725], 11);
+
+        // Menambahkan basemap OpenStreetMap
+        var osm = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            maxZoom: 19,
+            attribution:
+                '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        });
+
+        var basemap = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        });
+        basemap.addTo(map);
+
+        // Tambahkan WMS Layer dari Geoserver
+        var wmsLayer = L.tileLayer.wms("http://localhost:8080/geoserver/pgwebb10/wms?", {
+            layers: "ADMINISTRASIDESA_AR_25K",
+            format: "image/png",
+            transparent: true,
+        }).addTo(map);
+
+        // Tambahkan WFS Layer dari Geoserver
+        var wfsLayer = L.Geoserver.wfs("http://localhost:8080/geoserver/pgwebb10/wms?", {
+            layers: "ADMINISTRASIDESA_AR_25K",
+            style: {
+                color: "black",
+                fillOpacity: 0.5,
+                fillColor: "red"
+            },
+            onEachFeature: function (feature, layer) {
+                if (feature.properties && feature.properties.TYPE) {
+                    layer.bindPopup("Building type: " + feature.properties.TYPE);
+                }
+            },
+            fitLayer: true
+        });
+        wfsLayer.addTo(map);
+
+        // Tambahkan WFS Layer dari Geoserver
+        var wfsLayer2 = L.Geoserver.wms("https://geoportal.slemankab.go.id/geoserver/geonode/jalan_kabupaten_sleman_2023/ows", {
+            layers: "geonode:jalan_kabupaten_sleman_2023",
+            transparent: true,
+        });
+        wfsLayer2.addTo(map);
+
+        var wmsLayer3 = L.Geoserver.wms("http://localhost:8080/geoserver/PGWEB10/wms?", {
+            layers: "PGWEB10:Jumlah_Penduduk_Wonogiri",
+            transparent: true,
+            format: "image/png",
+        })
+        wmsLayer3.addTo(map);
+
+
+        // Tambahkan WMS Layer dari Geoserver
+        var wmsLayer2 = L.tileLayer.wms("http://localhost:8080/geoserver/PGWEB10/wms?", {
+            layers: "PGWEB10:ADMINISTRASIDESA_AR__WONOGIRI_25K",
+            format: "image/png",
+            transparent: true,
+        }).addTo(map);
+
+
+        // // Menampilkan Legend dari WMS Layer
+        // var layerLegend = L.Geoserver.legend("http://localhost:8080/geoserver/pgwebb10/wms?", {
+        //     layers: "pgwebb10:ADMINISTRASIDESA_AR_25K"
+        // });
+        // layerLegend.addTo(map);
+
+        var legendUrl = "http://localhost:8080/geoserver/pgwebb10/wms?REQUEST=GetLegendGraphic&VERSION=1.1.1&FORMAT=image/png&LAYER=pgwebb10:ADMINISTRASIDESA_AR_25K";
+
+        var legendImage = L.control({ position: "bottomleft" });
+        legendImage.onAdd = function (map) {
+            var div = L.DomUtil.create("div", "info legend");
+            div.innerHTML = '<img src="' + legendUrl + '" alt="Legend">';
+            return div;
+        };
+        legendImage.addTo(map);
+
+        // Control Layer
+        var baseMaps = {
+            "Osm": osm,
+            "Basemap": basemap,
+        };
+
+        var overlayMaps = {
+            "Kabupaten Sleman": wmsLayer,
+            "Kabupaten Wonogiri": wmsLayer2,
+            "Jalan Sleman": wfsLayer2,
+            "Jumlah Penduduk": wfsLayer3
+        };
+
+        L.control.layers(baseMaps, overlayMaps).addTo(map);
+
+        // Debugging jika terjadi kesalahan saat memuat WMS/WFS
+        wmsLayer.on('tileerror', function (error, tile) {
+            console.error("Error loading WMS tile:", error);
+        });
+
+        wfsLayer.on('loading', function () {
+            console.log("Loading WFS Layer...");
+        });
+
+        wfsLayer.on('load', function () {
+            console.log("WFS Layer loaded successfully!");
+        });
+
+        wfsLayer.on('error', function (error) {
+            console.error("Error loading WFS Layer:", error);
+        });
+
+        // Logo Watermark
+        L.Control.Watermark = L.Control.extend({
+            onAdd: function (map) {
+                var img = L.DomUtil.create('img');
+
+                img.src = 'icon/logo.png';
+                img.style.width = '200px';
+
+                return img;
+            },
+
+            onRemove: function (map) {
+                // Nothing to do here
+            }
+        });
+
+        L.control.watermark = function (opts) {
+            return new L.Control.Watermark(opts);
+        }
+
+        L.control.watermark({ position: 'bottomleft' }).addTo(map);
+    </script>
+</body>
+
+</html>
