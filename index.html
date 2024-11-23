@@ -9,6 +9,15 @@
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
 
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+        integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+
     <title>Web-GIS with Geoserver and Leaflet</title>
 
     <style>
@@ -25,9 +34,86 @@
 </head>
 
 <body>
-    <h1>Kabupaten Sleman dan Kabupaten Wonogiri</h1>
+    <nav class="navbar navbar-expand-lg bg-body-tertiary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#"><i class="fa-solid fa-map-location-dot"></i> Kabupaten Sleman dan
+                Wonogiri</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false"
+                aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link" href="https://geoportal.slemankab.go.id/" target="_blank"><i
+                                class="fa-solid fa-layer-group"></i> Sumber Data</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#infoModal"><i
+                                class="fa-solid fa-circle-info"></i> Info</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
 
+    <!-- Menginialisasi elemen peta -->
     <div id="map"></div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="infoModal" tabindex="-1" aria-labelledby="infoModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="infoModalLabel">Info Pembuat</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <table class="table table-striped">
+                        <tr>
+                            <th>Nama</th>
+                            <td>Shelamita</td>
+                        </tr>
+                        <tr>
+                            <th>NIM</th>
+                            <td>23/517749/SV/22825</td>
+                        </tr>
+                        <tr>
+                            <th>Kelas</th>
+                            <td>A</td>
+                        </tr>
+                        <tr>
+                            <th>Github</th>
+                            <td><a href="http://github.com/shelamita" target="_blank"
+                                    rel="noopener noreferrer">http://github.com/shelamita</a></td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feature Modal -->
+    <div class="modal fade" id="featureModal" tabindex="-1" aria-labelledby="featureModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="featureModalTitle"></h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="featureModalBody">
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -37,6 +123,11 @@
 
     <!-- Leaflet Geoserver Request -->
     <script src="lib/L.Geoserver.js"></script>
+
+    <!-- Bootstrap -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"></script>
 
     <script>
         // Inisialisasi map
@@ -55,14 +146,14 @@
         basemap.addTo(map);
 
         // Tambahkan WMS Layer dari Geoserver
-        var wmsLayer = L.tileLayer.wms("http://localhost:8080/geoserver/pgwebb10/wms?", {
+        var wmssleman = L.tileLayer.wms("http://localhost:8080/geoserver/pgwebb10/wms?", {
             layers: "ADMINISTRASIDESA_AR_25K",
             format: "image/png",
             transparent: true,
         }).addTo(map);
 
         // Tambahkan WFS Layer dari Geoserver
-        var wfsLayer = L.Geoserver.wfs("http://localhost:8080/geoserver/pgwebb10/wms?", {
+        var wfssleman = L.Geoserver.wfs("http://localhost:8080/geoserver/pgwebb10/wms?", {
             layers: "ADMINISTRASIDESA_AR_25K",
             style: {
                 color: "black",
@@ -76,25 +167,24 @@
             },
             fitLayer: true
         });
-        wfsLayer.addTo(map);
+        wfssleman.addTo(map);
 
-        // Tambahkan WFS Layer dari Geoserver
-        var wfsLayer2 = L.Geoserver.wms("https://geoportal.slemankab.go.id/geoserver/geonode/jalan_kabupaten_sleman_2023/ows", {
+        // Tambahkan WFS Layer jalan dari Geoserver
+        var wfsjalan = L.Geoserver.wms("https://geoportal.slemankab.go.id/geoserver/geonode/jalan_kabupaten_sleman_2023/ows", {
             layers: "geonode:jalan_kabupaten_sleman_2023",
             transparent: true,
-        });
-        wfsLayer2.addTo(map);
+        }).addTo(map);
 
-        var wmsLayer3 = L.Geoserver.wms("http://localhost:8080/geoserver/PGWEB10/wms?", {
-            layers: "PGWEB10:Jumlah_Penduduk_Wonogiri",
+        // Menambahkan WMS layer titik dari geoserver
+        var wmspenduduk = L.Geoserver.wms("http://localhost:8080/geoserver/PGWEB10/wms?", {
+            layers: "Jumlah_Penduduk_Wonogiri",
             transparent: true,
             format: "image/png",
-        })
-        wmsLayer3.addTo(map);
+        }).addTo(map);
 
 
         // Tambahkan WMS Layer dari Geoserver
-        var wmsLayer2 = L.tileLayer.wms("http://localhost:8080/geoserver/PGWEB10/wms?", {
+        var wmswonogiri = L.tileLayer.wms("http://localhost:8080/geoserver/PGWEB10/wms?", {
             layers: "PGWEB10:ADMINISTRASIDESA_AR__WONOGIRI_25K",
             format: "image/png",
             transparent: true,
@@ -124,10 +214,10 @@
         };
 
         var overlayMaps = {
-            "Kabupaten Sleman": wmsLayer,
-            "Kabupaten Wonogiri": wmsLayer2,
-            "Jalan Sleman": wfsLayer2,
-            "Jumlah Penduduk": wfsLayer3
+            "Kabupaten Sleman": wmssleman,
+            "Kabupaten Wonogiri": wmswonogiri,
+            "Jalan Sleman": wfsjalan,
+            "Jumlah Penduduk": wmspenduduk,
         };
 
         L.control.layers(baseMaps, overlayMaps).addTo(map);
